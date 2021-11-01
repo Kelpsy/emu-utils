@@ -74,7 +74,6 @@ macro_rules! impl_bit {
     ($t: ty) => {
         impl Bit for $t {
             #[inline(always)]
-            #[must_use]
             fn bit<const BIT: usize>(self) -> bool {
                 self & 1 << BIT != 0
             }

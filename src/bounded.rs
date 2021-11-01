@@ -51,14 +51,12 @@ macro_rules! bounded_int_common {
                     ".",
                 ),
                 #[inline]
-                #[must_use]
                 pub const unsafe fn new_unchecked(value: $inner) -> Self {
                     $name(value)
                 }
             );
 
             #[inline]
-            #[must_use]
             #[allow(clippy::int_plus_one)]
             pub const fn new_checked(value: $inner) -> Option<Self> {
                 if value >= $min_value && value <= $max_value $(&& value != $not_value)* {
@@ -69,7 +67,6 @@ macro_rules! bounded_int_common {
             }
 
             #[inline]
-            #[must_use]
             #[allow(clippy::int_plus_one)]
             pub const fn new(value: $inner) -> Self {
                 assert!(value >= $min_value && value <= $max_value $(&& value != $not_value)*);
@@ -112,14 +109,12 @@ macro_rules! bounded_int_common {
                     ".",
                 ),
                 #[inline]
-                #[must_use]
                 pub const unsafe fn new_unchecked(value: $inner) -> Self {
                     $name(value)
                 }
             );
 
             #[inline]
-            #[must_use]
             pub const fn new_checked(value: $inner) -> Option<Self> {
                 if value >= $min_value $(&& value != $not_value)* {
                     Some(unsafe { Self::new_unchecked(value) })
@@ -129,7 +124,6 @@ macro_rules! bounded_int_common {
             }
 
             #[inline]
-            #[must_use]
             pub const fn new(value: $inner) -> Self {
                 assert!(value >= $min_value $(&& value != $not_value)*);
                 unsafe { Self::new_unchecked(value) }
@@ -171,14 +165,12 @@ macro_rules! bounded_int_common {
                     ".",
                 ),
                 #[inline]
-                #[must_use]
                 pub const unsafe fn new_unchecked(value: $inner) -> Self {
                     $name(value)
                 }
             );
 
             #[inline]
-            #[must_use]
             #[allow(clippy::int_plus_one)]
             pub const fn new_checked(value: $inner) -> Option<Self> {
                 if value <= $max_value $(&& value != $not_value)* {
@@ -189,7 +181,6 @@ macro_rules! bounded_int_common {
             }
 
             #[inline]
-            #[must_use]
             #[allow(clippy::int_plus_one)]
             pub const fn new(value: $inner) -> Self {
                 assert!(value <= $max_value $(&& value != $not_value)*);
@@ -230,7 +221,6 @@ macro_rules! bounded_int {
 
         impl $name {
             #[inline]
-            #[must_use]
             pub const fn get(self) -> $inner {
                 if self.0 < $min_value || self.0 > $max_value $(|| self.0 == $not_value)* {
                     unsafe { core::hint::unreachable_unchecked() }
@@ -252,7 +242,6 @@ macro_rules! bounded_int {
 
         impl $name {
             #[inline]
-            #[must_use]
             pub const fn get(self) -> $inner {
                 if self.0 < $min_value $(|| self.0 == $not_value)* {
                     unsafe { core::hint::unreachable_unchecked() }
@@ -274,7 +263,6 @@ macro_rules! bounded_int {
 
         impl $name {
             #[inline]
-            #[must_use]
             pub const fn get(self) -> $inner {
                 if self.0 > $max_value $(|| self.0 == $not_value)* {
                     unsafe { core::hint::unreachable_unchecked() }
@@ -307,7 +295,6 @@ macro_rules! bounded_int_lit {
 
         impl $name {
             #[inline]
-            #[must_use]
             pub const fn get(self) -> $inner {
                 if self.0 < $min_value || self.0 > $max_value $(|| self.0 == $not_value)* {
                     unsafe { core::hint::unreachable_unchecked() }
@@ -333,7 +320,6 @@ macro_rules! bounded_int_lit {
 
         impl $name {
             #[inline]
-            #[must_use]
             pub const fn get(self) -> $inner {
                 if self.0 < $min_value $(|| self.0 == $not_value)* {
                     unsafe { core::hint::unreachable_unchecked() }
@@ -359,7 +345,6 @@ macro_rules! bounded_int_lit {
 
         impl $name {
             #[inline]
-            #[must_use]
             pub const fn get(self) -> $inner {
                 // if false $(|| self.0 == $not_value)* {
                 //     unsafe { core::hint::unreachable_unchecked() }

@@ -50,42 +50,36 @@ pub trait MemValue: Sized + Copy + Zero + Fill8 {
     /// of `Self`.
     ///
     /// [valid]: https://doc.rust-lang.org/stable/std/ptr/index.html#safety
-    #[must_use]
     unsafe fn read_le(ptr: *const Self) -> Self;
     /// # Safety
     /// The given pointer must be aligned to a `Self` boundary, be [valid] for `Self` reads and
     /// point to a properly initialized value of `Self`.
     ///
     /// [valid]: https://doc.rust-lang.org/stable/std/ptr/index.html#safety
-    #[must_use]
     unsafe fn read_le_aligned(ptr: *const Self) -> Self;
     /// # Safety
     /// The given pointer must be [valid] for `Self` reads and point to a properly initialized value
     /// of `Self`.
     ///
     /// [valid]: https://doc.rust-lang.org/stable/std/ptr/index.html#safety
-    #[must_use]
     unsafe fn read_be(ptr: *const Self) -> Self;
     /// # Safety
     /// The given pointer must be aligned to a `Self` boundary, be [valid] for `Self` reads and
     /// point to a properly initialized value of `Self`.
     ///
     /// [valid]: https://doc.rust-lang.org/stable/std/ptr/index.html#safety
-    #[must_use]
     unsafe fn read_be_aligned(ptr: *const Self) -> Self;
     /// # Safety
     /// The given pointer must be [valid] for `Self` reads and point to a properly initialized value
     /// of `Self`.
     ///
     /// [valid]: https://doc.rust-lang.org/stable/std/ptr/index.html#safety
-    #[must_use]
     unsafe fn read_ne(ptr: *const Self) -> Self;
     /// # Safety
     /// The given pointer must be aligned to a `Self` boundary, be [valid] for `Self` reads and
     /// point to a properly initialized value of `Self`.
     ///
     /// [valid]: https://doc.rust-lang.org/stable/std/ptr/index.html#safety
-    #[must_use]
     unsafe fn read_ne_aligned(ptr: *const Self) -> Self;
     /// # Safety
     /// The given pointer must be [valid] for `Self` writes.

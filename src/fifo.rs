@@ -10,7 +10,6 @@ pub struct Fifo<T: Copy, const CAPACITY: usize> {
 
 impl<T: Copy, const CAPACITY: usize> Fifo<T, CAPACITY> {
     #[inline]
-    #[must_use]
     pub fn new() -> Self {
         Fifo {
             buffer: [MaybeUninit::uninit(); CAPACITY],
