@@ -1,0 +1,12 @@
+[workspace]
+members = ["macros"]
+
+[package]
+name = "emu-utils"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+emu-utils-macros = { path = "macros" }
+static_assertions = "1.1"
