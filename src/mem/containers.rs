@@ -383,6 +383,15 @@ impl<const LEN: usize> From<Box<Bytes<LEN>>> for OwnedBytesCellPtr<LEN> {
     }
 }
 
+impl<const LEN: usize> From<OwnedBytesCellPtr<LEN>> for Box<Bytes<LEN>> {
+    #[inline]
+    fn from(other: OwnedBytesCellPtr<LEN>) -> Self {
+        let result = unsafe { Box::from_raw(other.0) };
+        mem::forget(other);
+        result
+    }
+}
+
 impl<const LEN: usize> Drop for OwnedBytesCellPtr<LEN> {
     #[inline]
     fn drop(&mut self) {
