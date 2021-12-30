@@ -299,9 +299,6 @@ macro_rules! bounded_int_lit {
                 if self.0 < $min_value || self.0 > $max_value $(|| self.0 == $not_value)* {
                     unsafe { core::hint::unreachable_unchecked() }
                 }
-                // if false $(|| self.0 == $not_value)* {
-                //     unsafe { core::hint::unreachable_unchecked() }
-                // }
                 self.0
             }
         }
@@ -324,9 +321,6 @@ macro_rules! bounded_int_lit {
                 if self.0 < $min_value $(|| self.0 == $not_value)* {
                     unsafe { core::hint::unreachable_unchecked() }
                 }
-                // if false $(|| self.0 == $not_value)* {
-                //     unsafe { core::hint::unreachable_unchecked() }
-                // }
                 self.0
             }
         }
@@ -346,9 +340,6 @@ macro_rules! bounded_int_lit {
         impl $name {
             #[inline]
             pub const fn get(self) -> $inner {
-                // if false $(|| self.0 == $not_value)* {
-                //     unsafe { core::hint::unreachable_unchecked() }
-                // }
                 if self.0 > $max_value $(|| self.0 == $not_value)* {
                     unsafe { core::hint::unreachable_unchecked() }
                 }

@@ -44,7 +44,29 @@ pub fn make_zero<T: Zero + ?Sized>(v: &mut T) {
     unsafe { ptr::write_bytes(v as *mut _ as *mut u8, 0, mem::size_of_val(v)) }
 }
 
+mod sealed {
+    pub trait MemValue {}
+
+    macro_rules! impl_mem_value {
+        ($($ty: ty),*) => {
+            $(
+                impl MemValue for $ty {}
+            )*
+        };
+    }
+
+    impl_mem_value!(u8, i8, u16, i16, u32, i32, u64, i64, u128, i128, usize, isize);
+}
+
 pub trait MemValue: Sized + Copy + Zero + Fill8 {
+    fn from_le_bytes(bytes: [u8; mem::size_of::<Self>()]) -> Self;
+    fn from_be_bytes(bytes: [u8; mem::size_of::<Self>()]) -> Self;
+    fn from_ne_bytes(bytes: [u8; mem::size_of::<Self>()]) -> Self;
+
+    fn to_le_bytes(self) -> [u8; mem::size_of::<Self>()];
+    fn to_be_bytes(self) -> [u8; mem::size_of::<Self>()];
+    fn to_ne_bytes(self) -> [u8; mem::size_of::<Self>()];
+
     /// # Safety
     /// The given pointer must be [valid] for `Self` reads and point to a properly initialized value
     /// of `Self`.
@@ -81,6 +103,7 @@ pub trait MemValue: Sized + Copy + Zero + Fill8 {
     ///
     /// [valid]: https://doc.rust-lang.org/stable/std/ptr/index.html#safety
     unsafe fn read_ne_aligned(ptr: *const Self) -> Self;
+
     /// # Safety
     /// The given pointer must be [valid] for `Self` writes.
     ///
@@ -115,7 +138,7 @@ pub trait MemValue: Sized + Copy + Zero + Fill8 {
 
 mod impl_primitive {
     use super::{Fill8, MemValue, Zero};
-    use core::{mem, ptr};
+    use core::mem;
 
     macro_rules! impl_unsafe_trait {
         ($tr: ty; $($ty: ty),*) => {
@@ -132,6 +155,36 @@ mod impl_primitive {
         ($($ty: ty),*) => {
             $(
                 impl MemValue for $ty {
+                    #[inline]
+                    fn from_le_bytes(bytes: [u8; mem::size_of::<Self>()]) -> Self {
+                        <$ty>::from_le_bytes(bytes)
+                    }
+
+                    #[inline]
+                    fn from_be_bytes(bytes: [u8; mem::size_of::<Self>()]) -> Self {
+                        <$ty>::from_be_bytes(bytes)
+                    }
+
+                    #[inline]
+                    fn from_ne_bytes(bytes: [u8; mem::size_of::<Self>()]) -> Self {
+                        <$ty>::from_ne_bytes(bytes)
+                    }
+
+                    #[inline]
+                    fn to_le_bytes(self) -> [u8; mem::size_of::<Self>()] {
+                        <$ty>::to_le_bytes(self)
+                    }
+
+                    #[inline]
+                    fn to_be_bytes(self) -> [u8; mem::size_of::<Self>()] {
+                        <$ty>::to_be_bytes(self)
+                    }
+
+                    #[inline]
+                    fn to_ne_bytes(self) -> [u8; mem::size_of::<Self>()] {
+                        <$ty>::to_ne_bytes(self)
+                    }
+
                     #[inline]
                     unsafe fn read_le(ptr: *const Self) -> Self {
                         #[cfg(target_endian = "little")]
@@ -221,79 +274,4 @@ mod impl_primitive {
     }
 
     impl_mem_value!(u8, i8, u16, i16, u32, i32, u64, i64, u128, i128, usize, isize);
-
-    macro_rules! read_arr {
-        ($T: ty, $LEN: expr, $ptr: expr, $fn_ident: ident) => {{
-            let mut result = mem::MaybeUninit::uninit();
-            let mut result_ptr = result.as_mut_ptr() as *mut T;
-            let mut ptr = $ptr as *const T;
-            for _ in 0..$LEN {
-                ptr::write(result_ptr, <$T>::$fn_ident(ptr));
-                result_ptr = result_ptr.add(1);
-                ptr = ptr.add(1);
-            }
-            result.assume_init()
-        }};
-    }
-
-    macro_rules! write_arr {
-        ($value: expr, $T: ty, $LEN: expr, $ptr: expr, $fn_ident: ident) => {{
-            let mut ptr = $ptr as *mut T;
-            for i in 0..$LEN {
-                $value[i].$fn_ident(ptr);
-                ptr = ptr.add(1);
-            }
-        }};
-    }
-
-    impl<T: MemValue, const LEN: usize> MemValue for [T; LEN] {
-        #[inline]
-        unsafe fn read_le(ptr: *const Self) -> Self {
-            read_arr!(T, LEN, ptr, read_le)
-        }
-        #[inline]
-        unsafe fn read_le_aligned(ptr: *const Self) -> Self {
-            read_arr!(T, LEN, ptr, read_le_aligned)
-        }
-        #[inline]
-        unsafe fn read_be(ptr: *const Self) -> Self {
-            read_arr!(T, LEN, ptr, read_be)
-        }
-        #[inline]
-        unsafe fn read_be_aligned(ptr: *const Self) -> Self {
-            read_arr!(T, LEN, ptr, read_be_aligned)
-        }
-        #[inline]
-        unsafe fn read_ne(ptr: *const Self) -> Self {
-            read_arr!(T, LEN, ptr, read_ne)
-        }
-        #[inline]
-        unsafe fn read_ne_aligned(ptr: *const Self) -> Self {
-            read_arr!(T, LEN, ptr, read_ne_aligned)
-        }
-        #[inline]
-        unsafe fn write_le(self, ptr: *mut Self) {
-            write_arr!(self, T, LEN, ptr, write_le)
-        }
-        #[inline]
-        unsafe fn write_le_aligned(self, ptr: *mut Self) {
-            write_arr!(self, T, LEN, ptr, write_le_aligned)
-        }
-        #[inline]
-        unsafe fn write_be(self, ptr: *mut Self) {
-            write_arr!(self, T, LEN, ptr, write_be)
-        }
-        #[inline]
-        unsafe fn write_be_aligned(self, ptr: *mut Self) {
-            write_arr!(self, T, LEN, ptr, write_be_aligned)
-        }
-        #[inline]
-        unsafe fn write_ne(self, ptr: *mut Self) {
-            write_arr!(self, T, LEN, ptr, write_ne)
-        }
-        #[inline]
-        unsafe fn write_ne_aligned(self, ptr: *mut Self) {
-            write_arr!(self, T, LEN, ptr, write_ne_aligned)
-        }
-    }
 }
