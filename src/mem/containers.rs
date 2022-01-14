@@ -305,6 +305,8 @@ impl<const LEN: usize> From<Bytes<LEN>> for [u8; LEN] {
     }
 }
 
+// This is necessary to sidestep the stacked borrows model (theoretically): a raw pointer is
+// required so that a borrow might be derived from it, but `Box<T>` receives special treatment.
 pub struct OwnedBytesCellPtr<const LEN: usize>(*mut Bytes<LEN>);
 
 impl<const LEN: usize> OwnedBytesCellPtr<LEN> {
@@ -376,6 +378,13 @@ impl<const LEN: usize> OwnedBytesCellPtr<LEN> {
     impl_writes!(as_ptr);
 }
 
+impl<const LEN: usize> Drop for OwnedBytesCellPtr<LEN> {
+    #[inline]
+    fn drop(&mut self) {
+        unsafe { dealloc(self.0 as *mut u8, Layout::new::<Bytes<LEN>>()) }
+    }
+}
+
 impl<const LEN: usize> From<Box<Bytes<LEN>>> for OwnedBytesCellPtr<LEN> {
     #[inline]
     fn from(other: Box<Bytes<LEN>>) -> Self {
@@ -389,13 +398,6 @@ impl<const LEN: usize> From<OwnedBytesCellPtr<LEN>> for Box<Bytes<LEN>> {
         let result = unsafe { Box::from_raw(other.0) };
         mem::forget(other);
         result
-    }
-}
-
-impl<const LEN: usize> Drop for OwnedBytesCellPtr<LEN> {
-    #[inline]
-    fn drop(&mut self) {
-        unsafe { dealloc(self.0 as *mut u8, Layout::new::<Bytes<LEN>>()) }
     }
 }
 
