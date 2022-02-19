@@ -187,34 +187,42 @@ mod impl_primitive {
 
                     #[inline]
                     unsafe fn read_le(ptr: *const Self) -> Self {
-                        #[cfg(target_endian = "little")]
-                        { ptr.read_unaligned() }
+                        let mut res = ptr.read_unaligned();
                         #[cfg(not(target_endian = "little"))]
-                        Self::from_le_bytes((ptr as *const [u8; mem::size_of::<Self>()]).read())
+                        {
+                            res = res.swap_bytes();
+                        }
+                        res
                     }
 
                     #[inline]
                     unsafe fn read_le_aligned(ptr: *const Self) -> Self {
-                        #[cfg(target_endian = "little")]
-                        { ptr.read() }
+                        let mut res = ptr.read();
                         #[cfg(not(target_endian = "little"))]
-                        Self::from_le_bytes((ptr as *const [u8; mem::size_of::<Self>()]).read())
+                        {
+                            res = res.swap_bytes();
+                        }
+                        res
                     }
 
                     #[inline]
                     unsafe fn read_be(ptr: *const Self) -> Self {
-                        #[cfg(target_endian = "big")]
-                        { ptr.read_unaligned() }
+                        let mut res = ptr.read_unaligned();
                         #[cfg(not(target_endian = "big"))]
-                        Self::from_be_bytes((ptr as *const [u8; mem::size_of::<Self>()]).read())
+                        {
+                            res = res.swap_bytes();
+                        }
+                        res
                     }
 
                     #[inline]
                     unsafe fn read_be_aligned(ptr: *const Self) -> Self {
-                        #[cfg(target_endian = "big")]
-                        { ptr.read() }
+                        let mut res = ptr.read();
                         #[cfg(not(target_endian = "big"))]
-                        Self::from_be_bytes((ptr as *const [u8; mem::size_of::<Self>()]).read())
+                        {
+                            res = res.swap_bytes();
+                        }
+                        res
                     }
 
                     #[inline]
@@ -228,35 +236,39 @@ mod impl_primitive {
                     }
 
                     #[inline]
-                    unsafe fn write_le(self, ptr: *mut Self) {
-                        #[cfg(target_endian = "little")]
-                        ptr.write_unaligned(self);
+                    unsafe fn write_le(mut self, ptr: *mut Self) {
                         #[cfg(not(target_endian = "little"))]
-                        (ptr as *mut [u8; mem::size_of::<Self>()]).write(self.to_le_bytes())
-                    }
-
-                    #[inline]
-                    unsafe fn write_le_aligned(self, ptr: *mut Self) {
-                        #[cfg(target_endian = "little")]
-                        ptr.write(self);
-                        #[cfg(not(target_endian = "little"))]
-                        (ptr as *mut [u8; mem::size_of::<Self>()]).write(self.to_le_bytes())
-                    }
-
-                    #[inline]
-                    unsafe fn write_be(self, ptr: *mut Self) {
-                        #[cfg(target_endian = "big")]
+                        {
+                            self = self.swap_bytes();
+                        }
                         ptr.write_unaligned(self);
-                        #[cfg(not(target_endian = "big"))]
-                        (ptr as *mut [u8; mem::size_of::<Self>()]).write(self.to_be_bytes())
                     }
 
                     #[inline]
-                    unsafe fn write_be_aligned(self, ptr: *mut Self) {
-                        #[cfg(target_endian = "big")]
+                    unsafe fn write_le_aligned(mut self, ptr: *mut Self) {
+                        #[cfg(not(target_endian = "little"))]
+                        {
+                            self = self.swap_bytes();
+                        }
                         ptr.write(self);
+                    }
+
+                    #[inline]
+                    unsafe fn write_be(mut self, ptr: *mut Self) {
                         #[cfg(not(target_endian = "big"))]
-                        (ptr as *mut [u8; mem::size_of::<Self>()]).write(self.to_be_bytes())
+                        {
+                            self = self.swap_bytes();
+                        }
+                        ptr.write_unaligned(self);
+                    }
+
+                    #[inline]
+                    unsafe fn write_be_aligned(mut self, ptr: *mut Self) {
+                        #[cfg(not(target_endian = "big"))]
+                        {
+                            self = self.swap_bytes();
+                        }
+                        ptr.write(self);
                     }
 
                     #[inline]
