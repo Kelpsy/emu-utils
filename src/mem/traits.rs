@@ -186,6 +186,7 @@ mod impl_primitive {
                     }
 
                     #[inline]
+                    #[allow(unused_mut)]
                     unsafe fn read_le(ptr: *const Self) -> Self {
                         let mut res = ptr.read_unaligned();
                         #[cfg(not(target_endian = "little"))]
@@ -196,6 +197,7 @@ mod impl_primitive {
                     }
 
                     #[inline]
+                    #[allow(unused_mut)]
                     unsafe fn read_le_aligned(ptr: *const Self) -> Self {
                         let mut res = ptr.read();
                         #[cfg(not(target_endian = "little"))]
@@ -236,6 +238,7 @@ mod impl_primitive {
                     }
 
                     #[inline]
+                    #[allow(unused_mut)]
                     unsafe fn write_le(mut self, ptr: *mut Self) {
                         #[cfg(not(target_endian = "little"))]
                         {
@@ -245,6 +248,7 @@ mod impl_primitive {
                     }
 
                     #[inline]
+                    #[allow(unused_mut)]
                     unsafe fn write_le_aligned(mut self, ptr: *mut Self) {
                         #[cfg(not(target_endian = "little"))]
                         {
