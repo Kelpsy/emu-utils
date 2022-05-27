@@ -5,9 +5,36 @@ macro_rules! def_event_slots {
     (@__inner $esi: ty, $n: expr$(,)*) => {
         pub(super) const LEN: usize = $n;
     };
+    (@__inner $esi: ty, $n: expr$(,)+ #[cfg($($cond: tt)*)] $ident: ident, $($other: tt)*) => {
+        $crate::cfg_if::cfg_if! {
+            if #[cfg($($cond)*)] {
+                pub const $ident: $esi = <$esi>::new($n);
+                def_event_slots!(@__inner $esi, $n + 1, $($other)*);
+            } else {
+                def_event_slots!(@__inner $esi, $n, $($other)*);
+            }
+        }
+    };
     (@__inner $esi: ty, $n: expr$(,)+ $ident: ident, $($other: tt)*) => {
         pub const $ident: $esi = <$esi>::new($n);
         def_event_slots!(@__inner $esi, $n + 1, $($other)*);
+    };
+    (
+        @__inner $esi: ty,
+        $n: expr$(,)+
+        #[cfg($($cond: tt)*)]
+        $start_ident: ident..$end_ident: ident $len: expr,
+        $($other: tt)*
+    ) => {
+        $crate::cfg_if::cfg_if! {
+            if #[cfg($($cond)*)] {
+                pub const $start_ident: $esi = <$esi>::new($n);
+                pub const $end_ident: $esi = <$esi>::new($n + $len - 1);
+                def_event_slots!(@__inner $esi, $n + $len, $($other)*);
+            } else {
+                def_event_slots!(@__inner $esi, $n, $($other)*);
+            }
+        }
     };
     (
         @__inner $esi: ty,

@@ -4,6 +4,7 @@
 
 extern crate alloc;
 pub extern crate static_assertions;
+pub extern crate cfg_if;
 
 pub use emu_utils_macros::*;
 pub mod bitfield;
