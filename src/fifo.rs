@@ -1,3 +1,4 @@
+use crate::{Loadable, LoadableInPlace, ReadSavestate, Storable, WriteSavestate};
 use core::mem::MaybeUninit;
 
 #[derive(Clone, Copy)]
@@ -6,6 +7,96 @@ pub struct Fifo<T: Copy, const CAPACITY: usize> {
     len: usize,
     read_pos: usize,
     write_pos: usize,
+}
+
+impl<T: Copy, const CAPACITY: usize> Loadable for Fifo<T, CAPACITY>
+where
+    T: Loadable,
+{
+    #[inline]
+    fn load<S: ReadSavestate>(save: &mut S) -> Result<Self, S::Error> {
+        save.start_struct()?;
+
+        save.start_field(b"len")?;
+        let len = save.load_raw::<u32>()? as usize;
+
+        save.start_field(b"buffer")?;
+        let mut buffer = [MaybeUninit::uninit(); CAPACITY];
+        let slice = if S::TRANSIENT {
+            unsafe { buffer.get_unchecked_mut(..len) }
+        } else {
+            &mut buffer[..len]
+        };
+        for elem in slice {
+            *elem = MaybeUninit::new(save.load()?);
+        }
+
+        save.end_struct()?;
+
+        Ok(Fifo {
+            buffer,
+            len,
+            read_pos: 0,
+            write_pos: len,
+        })
+    }
+}
+
+impl<T: Copy, const CAPACITY: usize> LoadableInPlace for Fifo<T, CAPACITY>
+where
+    T: Loadable,
+{
+    #[inline]
+    fn load_in_place<S: ReadSavestate>(&mut self, save: &mut S) -> Result<(), S::Error> {
+        save.start_struct()?;
+
+        save.start_field(b"len")?;
+        self.len = save.load_raw::<u32>()? as usize;
+
+        save.start_field(b"buffer")?;
+        let slice = if S::TRANSIENT {
+            unsafe { self.buffer.get_unchecked_mut(..self.len) }
+        } else {
+            &mut self.buffer[..self.len]
+        };
+        for elem in slice {
+            *elem = MaybeUninit::new(save.load()?);
+        }
+
+        save.end_struct()?;
+
+        self.read_pos = 0;
+        self.write_pos = self.len;
+
+        Ok(())
+    }
+}
+
+impl<T: Copy, const CAPACITY: usize> Storable for Fifo<T, CAPACITY>
+where
+    T: Storable,
+{
+    #[inline]
+    fn store<S: WriteSavestate>(&mut self, save: &mut S) -> Result<(), S::Error> {
+        save.start_struct()?;
+
+        save.start_field(b"len")?;
+        save.store_array_len(self.len)?;
+
+        save.start_field(b"buffer")?;
+        let mut i = self.read_pos;
+        while i != self.write_pos {
+            save.store(unsafe { self.buffer.get_unchecked_mut(i).assume_init_mut() })?;
+            i += 1;
+            if i == CAPACITY {
+                i = 0;
+            }
+        }
+
+        save.end_struct()?;
+
+        Ok(())
+    }
 }
 
 impl<T: Copy, const CAPACITY: usize> Fifo<T, CAPACITY> {

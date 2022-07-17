@@ -1,4 +1,7 @@
-use core::{mem, ptr};
+use core::{
+    mem::{self, MaybeUninit},
+    ptr,
+};
 use std::alloc::{alloc_zeroed, handle_alloc_error, Layout};
 
 /// # Safety
@@ -12,6 +15,7 @@ pub fn fill_8<T: Fill8 + ?Sized>(v: &mut T, fill_value: u8) {
 
 unsafe impl<T, const LEN: usize> Fill8 for [T; LEN] where T: Fill8 {}
 unsafe impl<T> Fill8 for [T] where T: Fill8 {}
+unsafe impl<T> Fill8 for MaybeUninit<T> where T: Fill8 {}
 
 /// # Safety
 /// A 0 byte pattern must be valid when interpreted as `Self`.
@@ -21,6 +25,7 @@ unsafe impl<T> Zero for *const T {}
 unsafe impl<T> Zero for *mut T {}
 unsafe impl<T, const LEN: usize> Zero for [T; LEN] where T: Zero {}
 unsafe impl<T> Zero for [T] where T: Zero {}
+unsafe impl<T> Zero for MaybeUninit<T> where T: Zero {}
 
 #[inline]
 pub fn zeroed_box<T: Zero>() -> Box<T> {

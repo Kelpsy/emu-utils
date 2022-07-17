@@ -1,3 +1,4 @@
+use crate::Savestate;
 use core::{mem, ops::Add};
 
 #[macro_export]
@@ -54,7 +55,7 @@ macro_rules! def_event_slots {
 pub type RawTimestamp = u64;
 pub type SignedTimestamp = i64;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Savestate)]
 struct EventSlot<
     T: Copy + Ord + Add + From<RawTimestamp> + Into<RawTimestamp>,
     E: Copy + Eq + Default,
@@ -66,7 +67,7 @@ struct EventSlot<
     next_i: ESI,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Savestate)]
 pub struct Schedule<
     T: Copy + Ord + Add + From<RawTimestamp> + Into<RawTimestamp>,
     E: Copy + Eq + Default,
@@ -170,6 +171,7 @@ impl<
 
     /// # Panics
     /// May panic if the event at the specified slot is not currently scheduled.
+    #[inline]
     pub fn cancel(&mut self, slot_index: ESI) {
         let slot = &mut self.slots[slot_index.into()];
         debug_assert!(slot.time != T::from(0));
@@ -183,6 +185,11 @@ impl<
             let new_next_event_time = next_slot.time;
             self.next_event_time = new_next_event_time;
         }
+    }
+
+    #[inline]
+    pub fn is_scheduled(&self, slot_index: ESI) -> bool {
+        self.slots[slot_index.into()].time != T::from(0)
     }
 }
 

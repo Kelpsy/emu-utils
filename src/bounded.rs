@@ -313,3 +313,34 @@ macro_rules! bounded_int_step {
         }
     };
 }
+
+#[macro_export]
+macro_rules! bounded_int_savestate {
+    ($name: ident($inner: ty)) => {
+        impl $crate::Loadable for $name {
+            #[inline]
+            fn load<S: $crate::ReadSavestate>(save: &mut S) -> Result<Self, S::Error> {
+                save.load::<$inner>()
+                    .and_then(|v| Self::new_checked(v).ok_or_else(|| S::invalid_enum()))
+            }
+        }
+        
+        impl $crate::LoadableInPlace for $name {
+            #[inline]
+            fn load_in_place<S: $crate::ReadSavestate>(
+                &mut self,
+                save: &mut S,
+            ) -> Result<(), S::Error> {
+                *self = save.load()?;
+                Ok(())
+            }
+        }
+
+        impl $crate::Storable for $name {
+            #[inline]
+            fn store<S: $crate::WriteSavestate>(&mut self, save: &mut S) -> Result<(), S::Error> {
+                save.store(&mut self.get())
+            }
+        }
+    };
+}
