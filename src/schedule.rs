@@ -2,6 +2,40 @@ use crate::Savestate;
 use core::{mem, ops::Add};
 
 #[macro_export]
+macro_rules! def_timestamp {
+    (
+        $(#[$($attr: tt)*])* $vis: vis struct $name: ident
+    ) => {
+        #[repr(transparent)]
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+        $(#[$($attr)*])*
+        $vis struct $name(pub $crate::schedule::RawTimestamp);
+        
+        impl ::core::ops::Add for $name {
+            type Output = Self;
+            #[inline]
+            fn add(self, rhs: Self) -> Self {
+                Self(self.0 + rhs.0)
+            }
+        }
+        
+        impl ::core::convert::From<$crate::schedule::RawTimestamp> for $name {
+            #[inline]
+            fn from(v: $crate::schedule::RawTimestamp) -> Self {
+                Self(v)
+            }
+        }
+        
+        impl ::core::convert::From<$name> for $crate::schedule::RawTimestamp {
+            #[inline]
+            fn from(v: $name) -> Self {
+                v.0
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! def_event_slots {
     (@__inner $esi: ty, $n: expr$(,)*) => {
         pub(super) const LEN: usize = $n;
@@ -49,7 +83,47 @@ macro_rules! def_event_slots {
     };
     ($esi: ty, $($contents: tt)*) => {
         def_event_slots!(@__inner $esi, 1, $($contents)*,);
-    }
+    };
+    ($vis: vis mod $mod_ident: ident, $esi: ty, $($contents: tt)*) => {
+        $vis mod $mod_ident {
+            use super::*;
+            $crate::def_event_slots!(@__inner $esi, 1, $($contents)*,);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! def_event_slot_index {
+    (
+        $priv_mod_ident: ident, $event_slots_mod_ident: ident,
+        $(#[$($attr: tt)*])* $vis: vis struct $name: ident($inner: ty)
+    ) => {
+        mod $priv_mod_ident {
+            use super::*;
+            $crate::bounded_int!(
+                $(#[$($attr)*])*
+                $vis struct $name($inner),
+                max ($event_slots_mod_ident::LEN - 1) as $inner
+            );
+            $crate::bounded_int_savestate!($name($inner));
+        }
+        pub use $priv_mod_ident::*;
+        
+        impl ::core::convert::From<usize> for $name {
+            #[inline]
+            fn from(v: usize) -> Self {
+                assert!(v < $event_slots_mod_ident::LEN);
+                unsafe { Self::new_unchecked(v as $inner) }
+            }
+        }
+        
+        impl ::core::convert::From<$name> for usize {
+            #[inline]
+            fn from(v: $name) -> Self {
+                v.get() as usize
+            }
+        }
+    };
 }
 
 pub type RawTimestamp = u64;
